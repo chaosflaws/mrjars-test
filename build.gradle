@@ -1,0 +1,71 @@
+plugins {
+    id 'java'
+
+    id 'org.gradlex.java-module-dependencies' version '1.5'
+    id 'org.gradlex.java-module-testing' version '1.3'
+}
+
+group = 'de.chaosflaws'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    sourceSets['main']
+}
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets.create('java21') {
+    java.srcDir('src/java21/java')
+
+    compileClasspath += sourceSets['main'].output
+    runtimeClasspath += sourceSets['main'].output
+}
+
+tasks {
+    jar {
+        dependsOn('compileJava21')
+        into('META-INF/versions/21') {
+            from(sourceSets['java21'].output)
+        }
+        manifest {
+            attributes(['Multi-Release':'true'])
+        }
+    }
+}
+
+tasks.register('compileJava21') {
+    dependsOn('compileJava')
+
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+    sourceSets['java21']
+}
+
+testing {
+    suites {
+        test {
+            dependencies {
+                implementation sourceSets.main.output
+            }
+        }
+
+        test21(JvmTestSuite) {
+            dependencies {
+                implementation project()
+            }
+            sources {
+                java {
+                    srcDirs = ['src/test/java']
+                }
+            }
+        }
+    }
+}
